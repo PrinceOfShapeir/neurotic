@@ -59,7 +59,7 @@ console.log("Oh well, better luck next time.");
 Perceptron.prototype = new Network();
 Perceptron.prototype.constructor = Perceptron;
 
-var newPercept = new Perceptron(1,4,1);
+var newPercept = new Perceptron(2,3,1);
 newTrainer= new Trainer(newPercept);
 
 // x,x,x => rock, paper, scissors
@@ -86,12 +86,19 @@ newTrainer.train(trainSet);
 
 
 var rpc = {
+	
+
  rock : newPercept.activate([1,0,0]),
  paper : newPercept.activate([0,1,0]),
  scissors : newPercept.activate([0,0,1]),
  greatest: "Rock"
+ 
 };
-
+/*
+0.38131287018331056
+0.38140240129937597
+0.38140240129937597*/
+console.log(Object.entries(rpc));
 if(rpc.paper>rpc.rock){
 	rpc.greatest = "Paper";
 	}
