@@ -48,6 +48,6 @@ const flip = function (array) {
 //provides terse way of strictly validating numbers
 const valnum = function (number) {
 
-	return typeof(number)===Number;
+	return typeof(number)==='number';
 
 }
