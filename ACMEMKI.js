@@ -1,11 +1,3 @@
-module.exports = {
-	sum,
-	flip,
-	validNumber
-
-}
-
-
 const sum = function (array){
 	if(!Array.isArray(array)){
 	
@@ -49,5 +41,12 @@ const flip = function (array) {
 const valnum = function (number) {
 
 	return typeof(number)==='number';
+
+}
+
+module.exports = {
+	sum,
+	flip,
+	validNumber
 
 }
