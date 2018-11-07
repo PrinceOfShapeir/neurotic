@@ -177,10 +177,16 @@ return nullSet;
 
 //var gridMap = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
 
-var game = function(moves, count, player){
+var game = function(moves, count, player, playerTwo){
 
 //var moves = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
-var movesRated = [];
+let movesRated = [];
+let plays = player;
+if(count%2===0){
+	
+	plays = playerTwo;
+	console.log("two plays");
+}
 
 for (var i = 0; i<9; i++) {
 	
@@ -189,7 +195,7 @@ for (var i = 0; i<9; i++) {
 	if(moveCache[i]===.5){
 	moveCache[i] = 1;
 	
-	let rating = player.activate(moveCache);
+	let rating = plays.activate(moveCache);
 	movesRated.push(rating[0]);
 	
 	//console.log(movesRated[i] + " " + i + 1);
@@ -211,7 +217,7 @@ let move = movesRated.indexOf(Math.max.apply(Math,movesRated))+1;
 
 let logmoves = moves.slice();
 if(count%2===0){
-
+console.log("flipping board");
 logmoves = ACME.flip(logmoves);
 }
 console.log(move);
@@ -250,7 +256,7 @@ count++;
 
 moves = ACME.flip(moves);
 
-return game(moves, count, player);
+return game(moves, count, player, playerTwo);
 /*
 
 if(count%2===0){
@@ -271,16 +277,23 @@ var results = {
 	
 	resultArray: []
 	};
-for(var i = 0; i<20; i++){
-var	ticTacPlayer = new Perceptron(9,27,1);
-ticTacTrainer= new Trainer(ticTacPlayer);
-ticTacTrainer.train(trainSet);
-ticTacTrainer.train(mustSet);
-ticTacTrainer.train(makeNullSet());
+for(var i = 0; i<2; i++){
+	let	ticTacPlayer = new Perceptron(9,27,1);
+	ticTacTrainer= new Trainer(ticTacPlayer);
+	ticTacTrainer.train(trainSet);
+	ticTacTrainer.train(mustSet);
+	ticTacTrainer.train(makeNullSet());
+	
+	let secondPlayer = new Perceptron(9,27,1);
+	secondTrainer = new Trainer(secondPlayer);
+	secondTrainer.train(trainSet);
+	secondTrainer.train(mustSet);
+	secondTrainer.train(makeNullSet());
+	
 //ticTacTrainer.train(winningMoves);
 	//uncomment this to seed with your results
 	
-let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer);
+let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer, secondPlayer);
 
 if(gameresult!=false){
 	
