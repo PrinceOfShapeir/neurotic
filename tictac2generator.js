@@ -38,6 +38,8 @@ Perceptron.prototype.constructor = Perceptron;
 
 //var ticTacPlayer = new Perceptron(9,18,1);
 
+//yes the training area contains global variables, but those will be dealt with once the training
+//section is moved to another module
 
 var trainSet = [
 
@@ -217,7 +219,7 @@ let move = movesRated.indexOf(Math.max.apply(Math,movesRated))+1;
 
 let logmoves = moves.slice();
 if(count%2===0){
-console.log("flipping board");
+//console.log("flipping board");
 logmoves = ACME.flip(logmoves);
 }
 console.log(move);
@@ -234,11 +236,10 @@ console.log(logmoves.slice(6));
 if(wins.win(moves)){
 	console.log("win");
 	console.log(count);
-	if(count<=6){
-	return moves;
+	return [moves,plays];
 
-}
-else return false;
+
+//else return false;
 }
 else if(count>=moves.length){
 	console.log("ran out of moves");
@@ -273,16 +274,28 @@ else return game(moves, count);
 
 }
 
-var results = {
+
+function gameon() = {
+
+let results = {
 	
-	resultArray: []
+	resultArray: [],
+	ultimateWinner: {}
 	};
-for(var i = 0; i<2; i++){
-	let	ticTacPlayer = new Perceptron(9,27,1);
-	ticTacTrainer= new Trainer(ticTacPlayer);
-	ticTacTrainer.train(trainSet);
-	ticTacTrainer.train(mustSet);
-	ticTacTrainer.train(makeNullSet());
+const gameGen = function(lives, winner, iterations) {
+	
+	let ticTacPlayer;
+	
+	if(!winner){
+		ticTacPlayer = new Perceptron(9,27,1);
+		ticTacTrainer= new Trainer(ticTacPlayer);
+		ticTacTrainer.train(trainSet);
+		ticTacTrainer.train(mustSet);
+		ticTacTrainer.train(makeNullSet());
+	}
+	else {
+		ticTacPlayer = winner;
+	}
 	
 	let secondPlayer = new Perceptron(9,27,1);
 	secondTrainer = new Trainer(secondPlayer);
@@ -295,25 +308,40 @@ for(var i = 0; i<2; i++){
 	
 let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer, secondPlayer);
 
-if(gameresult!=false){
+	//playerone wins, adds to killcount, one step further to winning game entirely
+if(lives<3&&gameresult!=false&&gameresult[1]!=ticTacPlayer){
+	lives++;
+	results.resultArray.push(gameresult[0]);
+	return gameGen(lives,gameresult[1], iterations);
+}
 	
-	results.resultArray.push(gameresult);
+else if(lives>=3){
+		console.log(lives + 1 + " opponents have been vanquished.");
+		console.log(iterations + 1 + " eons have passed before this result was achieved.");
+		results.ultimateWinner = winner;
+		return;
+}
+	//a new champion arises
+else if(gameresult!=false){
+	iterations++;
+	return gameGen(0, gameresult[1], iterations);
+}
+	//tie scenario, but tie is assumed to be bad for playerOne (for now)
+else {
+	iterations++;
+	return gameGen(lives, secondPlayer, iterations);
+}
 	
 }
-//ticTacPlayer = new Perceptron(9,27,1);
-//ticTacTrainer.train(trainSet);
-//ticTacTrainer.train(mustSet);
-//ticTacTrainer.train(makeNullSet);
-
-	
-}
+//initialize with 0, false, 0
+//If you have a saved character, insert them instead of false
+gameGen(0, false, 0);
 //make sure this file exists! 
 results = JSON.stringify(results);
 fs.appendFile('winset.json', results,err => {  
     if (err) throw err;
 });
 
+}
+gameon();
 
-//This is single player tic tac toe
-//theoretically the network should only take 3 moves to win by itself
-//any more than that and it is not efficient. 
