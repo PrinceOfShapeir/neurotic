@@ -41,7 +41,7 @@ Perceptron.prototype.constructor = Perceptron;
 //yes the training area contains global variables, but those will be dealt with once the training
 //section is moved to another module
 
-var trainSet = [
+const trainSet = [
 
 {
 input: [1,1,1,.5,.5,.5,.5,.5,.5], //top row match
@@ -124,6 +124,7 @@ while(winningSet.length){
 }
 
 
+
 /*
 let normalSet = [];
 let dummyInput = new Array(9).fill(Math.random);
@@ -158,8 +159,10 @@ else{
 }
 */
 
-//var nullSet = [];//random moves are considered poor
-
+//var nullSet = [];//random moves are considered poor 
+//consider the input as a probability density function, that's why we don't need to collapse
+//decimals into ones and zeros and it allows the compression of entire game sequence into a 
+//single pdf interpretable via gradient descent
 function makeNullSet() {
 	
 	let nullSet = [];
@@ -179,7 +182,7 @@ return nullSet;
 
 //var gridMap = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
 
-var game = function(moves, count, player, playerTwo){
+function game(moves, count, player, playerTwo){
 
 //var moves = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
 let movesRated = [];
@@ -236,7 +239,11 @@ console.log(logmoves.slice(6));
 if(wins.win(moves)){
 	console.log("win");
 	console.log(count);
-	return [moves,plays];
+	let countgrade = false;
+	if(count<6){
+		countgrade = true;
+	}	
+	return [moves,plays, count%2, countgrade];
 
 
 //else return false;
@@ -275,7 +282,7 @@ else return game(moves, count);
 }
 
 
-function gameon() = {
+function gameon(){
 
 let results = {
 	
@@ -287,7 +294,7 @@ const gameGen = function(lives, winner, iterations) {
 	let ticTacPlayer;
 	
 	if(!winner){
-		ticTacPlayer = new Perceptron(9,27,1);
+		ticTacPlayer = new Perceptron(9,48,1);
 		ticTacTrainer= new Trainer(ticTacPlayer);
 		ticTacTrainer.train(trainSet);
 		ticTacTrainer.train(mustSet);
@@ -297,7 +304,7 @@ const gameGen = function(lives, winner, iterations) {
 		ticTacPlayer = winner;
 	}
 	
-	let secondPlayer = new Perceptron(9,27,1);
+	let secondPlayer = new Perceptron(9,48,1);
 	secondTrainer = new Trainer(secondPlayer);
 	secondTrainer.train(trainSet);
 	secondTrainer.train(mustSet);
@@ -308,28 +315,48 @@ const gameGen = function(lives, winner, iterations) {
 	
 let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer, secondPlayer);
 
+
 	//playerone wins, adds to killcount, one step further to winning game entirely
-if(lives<3&&gameresult!=false&&gameresult[1]!=ticTacPlayer){
+if(lives<10&&gameresult!=false&&gameresult[2]!=0){
 	lives++;
 	results.resultArray.push(gameresult[0]);
+	if(gameresult[3]){
+		
+		
+		ticTacTrainer= new Trainer(gameresult[1]);
+		ticTacTrainer.train({
+			input: game[0],
+			output: [1]
+		});
+		console.log("Training in the Hyperbolic Time Chamber");
+		}
 	return gameGen(lives,gameresult[1], iterations);
 }
-	
-else if(lives>=3){
+	else if(lives>=10&&gameresult!=false&&gameresult[2]!=0){
 		console.log(lives + 1 + " opponents have been vanquished.");
 		console.log(iterations + 1 + " eons have passed before this result was achieved.");
-		results.ultimateWinner = winner;
+		results.ultimateWinner = gameresult[1];
 		return;
 }
+
 	//a new champion arises
 else if(gameresult!=false){
 	iterations++;
 	return gameGen(0, gameresult[1], iterations);
 }
-	//tie scenario, but tie is assumed to be bad for playerOne (for now)
-else {
+
+
+	//tie scenario, but tie is assumed to be bad for playerOne (for now) returns secondPlayer
+	//if tie is not bad, ticTacPlayer returned
+else if(gameresult===false){
 	iterations++;
-	return gameGen(lives, secondPlayer, iterations);
+	return gameGen(lives, ticTacPlayer, iterations);
+}
+else {
+	
+	console.log(gameresult);
+	console.log("error game stopped");
+	return;
 }
 	
 }
