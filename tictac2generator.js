@@ -85,7 +85,7 @@ output: [1]
 	output: [1]	
 }
 
-]
+];
 
 var mustSet = [{ input: [.5,.5,.5,.5,1,.5,.5,.5,.5],
 	output: [1]	
@@ -185,6 +185,7 @@ return nullSet;
 function game(moves, count, player, playerTwo){
 
 //var moves = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
+let movesOld = moves.slice();
 let movesRated = [];
 let plays = player;
 if(count%2===0){
@@ -239,11 +240,13 @@ console.log(logmoves.slice(6));
 if(wins.win(moves)){
 	console.log("win");
 	console.log(count);
-	let countgrade = false;
+	
+	/*this part to control quality flow
+	let countgrade = true;
 	if(count<6){
 		countgrade = true;
-	}	
-	return [moves,plays, count%2, countgrade];
+	}*/	
+	return [moves,plays, count%2, movesOld];
 
 
 //else return false;
@@ -287,16 +290,17 @@ function gameon(){
 let results = {
 	
 	resultArray: [],
-	ultimateWinner: {}
+	ultimateWinner: {},
+	hyperbolicSet: []
 	};
 const gameGen = function(lives, winner, iterations) {
 	
 	let ticTacPlayer;
 	
 	if(!winner){
-		ticTacPlayer = new Perceptron(9,48,1);
+		ticTacPlayer = new Perceptron(9,18,1);
 		ticTacTrainer= new Trainer(ticTacPlayer);
-		ticTacTrainer.train(trainSet);
+		//ticTacTrainer.train(trainSet);
 		ticTacTrainer.train(mustSet);
 		ticTacTrainer.train(makeNullSet());
 	}
@@ -304,11 +308,18 @@ const gameGen = function(lives, winner, iterations) {
 		ticTacPlayer = winner;
 	}
 	
-	let secondPlayer = new Perceptron(9,48,1);
+	let secondPlayer = new Perceptron(9,18,1);
 	secondTrainer = new Trainer(secondPlayer);
-	secondTrainer.train(trainSet);
+	//secondTrainer.train(trainSet);
 	secondTrainer.train(mustSet);
 	secondTrainer.train(makeNullSet());
+	if(results.hyperbolicSet.length&&Array.isArray(results.hyperbolicSet)){
+		console.log(results.hyperbolicSet);
+		secondTrainer.train(results.hyperbolicSet,{
+			iterations: 200,
+			cost: Trainer.cost.MSE
+			});
+		}
 	
 //ticTacTrainer.train(winningMoves);
 	//uncomment this to seed with your results
@@ -320,14 +331,43 @@ let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer, secondPlaye
 if(lives<10&&gameresult!=false&&gameresult[2]!=0){
 	lives++;
 	results.resultArray.push(gameresult[0]);
+
 	if(gameresult[3]){
 		
 		
-		ticTacTrainer= new Trainer(gameresult[1]);
-		ticTacTrainer.train({
-			input: game[0],
+	//trains on result
+	let a = [{
+			input: gameresult[0],
 			output: [1]
-		});
+		},
+		{
+			input: ACME.flip(gameresult[0]),
+			output: [0]
+		},
+		
+			//back propagates a turn
+		{
+			input: gameresult[3],
+			output: [1]
+		},
+		{
+			input: ACME.flip(gameresult[3]),
+			output: [0]
+		}
+			
+				
+		
+		
+		];
+		
+		ticTacTrainer= new Trainer(gameresult[1]);
+		ticTacTrainer.train(a);
+		console.log(a);
+		results.hyperbolicSet = results.hyperbolicSet.concat(a);
+	
+
+		
+		
 		console.log("Training in the Hyperbolic Time Chamber");
 		}
 	return gameGen(lives,gameresult[1], iterations);
