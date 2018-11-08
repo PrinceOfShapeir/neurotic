@@ -1,3 +1,4 @@
+
 const sum = function (array){
 	if(!Array.isArray(array)){
 	
@@ -7,7 +8,7 @@ const sum = function (array){
 	let s = 0;
 	for(i in array){
 		
-		if(valnum(array[i]){
+		if(valnum(array[i])){
 
 			s += array[i];
 		}
@@ -16,7 +17,8 @@ const sum = function (array){
 }
 
 // returns the inverse of any normalized array
-const flip = function (array) {
+// lower bounds must be zero, but upper may be modified
+const flip = function (array, upperBound = 1) {
 	
 	if(!Array.isArray(array)){
 	
@@ -28,7 +30,7 @@ const flip = function (array) {
 
 		if(valnum(array[i])){
 
-			array[i] = Math.abs(array[i]-1);
+			array[i] = Math.abs(array[i]-upperBound);
 
 		}
 	}
@@ -44,9 +46,9 @@ const valnum = function (number) {
 
 }
 
+
 module.exports = {
 	sum,
 	flip,
-	validNumber
-
+	valnum
 }
