@@ -182,12 +182,30 @@ return nullSet;
 
 //var gridMap = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
 
-function game(moves, count, player, playerTwo){
+
+function GameObject (player, playerTwo){
+	
+	this.player = player;
+	this.playerTwo =  playerTwo;
+	this.moves = new Array(9);
+	this.moves = this.moves.fill(.5);
+	this.count = 1;
+	
+	
+	
+}
+
+
+
+function game(args){
 
 //var moves = [.5,.5,.5,.5,.5,.5,.5,.5,.5];
-let movesOld = moves.slice();
+let movesOld = args.moves.slice();
 let movesRated = [];
-let plays = player;
+let count = args.count + 0;
+let playerOne = args.player;
+let playerTwo = args.playerTwo;
+let plays = playerOne;
 if(count%2===0){
 	
 	plays = playerTwo;
@@ -196,7 +214,7 @@ if(count%2===0){
 
 for (var i = 0; i<9; i++) {
 	
-	let moveCache = moves.slice();
+	let moveCache = movesOld.slice();
 	
 	if(moveCache[i]===.5){
 	moveCache[i] = 1;
@@ -219,9 +237,10 @@ let move = movesRated.indexOf(Math.max.apply(Math,movesRated))+1;
 
 
 	//moves = ACME.flip(moves);
-	moves[move-1] = 1;
+let movesNew =	movesOld;
+movesNew[move-1] = 1;
 
-let logmoves = moves.slice();
+let logmoves = movesNew.slice();
 if(count%2===0){
 //console.log("flipping board");
 logmoves = ACME.flip(logmoves);
@@ -237,7 +256,7 @@ console.log(logmoves.slice(6));
 //console.log(ticTacPlayer.activate([.5,.5,.5,.5,1,.5,.5,.5,.5]));
 
 //console.log("it's alive!");
-if(wins.win(moves)){
+if(wins.win(movesNew)){
 	console.log("win");
 	console.log(count);
 	
@@ -246,16 +265,16 @@ if(wins.win(moves)){
 	if(count<6){
 		countgrade = true;
 	}*/	
-	return [moves,plays, count%2, movesOld];
+	return {moves:movesNew,plays:plays, count:count%2, movesOld:movesOld};
 
 
 //else return false;
 }
-else if(count>=moves.length){
+else if(count>=movesNew.length){
 	console.log("ran out of moves");
 	return false;
 	}
-else if(moves.indexOf(.5)===-1){
+else if(movesNew.indexOf(.5)===-1){
 	console.log("tie");
 	//console.log(moves);	
 	return false;
@@ -265,9 +284,9 @@ else if(moves.indexOf(.5)===-1){
 else {
 count++;
 
-moves = ACME.flip(moves);
+movesNew = ACME.flip(movesNew);
 
-return game(moves, count, player, playerTwo);
+return game({moves:movesNew, count:count, player:playerOne, playerTwo:playerTwo});
 /*
 
 if(count%2===0){
@@ -293,9 +312,11 @@ let results = {
 	ultimateWinner: {},
 	hyperbolicSet: []
 	};
-const gameGen = function(lives, winner, iterations) {
-	
+const gameGen = function(livesInput, winner, iterationsInput) {
+	let lives = livesInput + 0;
+	let iterations = iterationsInput + 0;
 	let ticTacPlayer;
+	let ticTacTrainer;
 	
 	if(!winner){
 		ticTacPlayer = new Perceptron(9,18,1);
@@ -303,6 +324,7 @@ const gameGen = function(lives, winner, iterations) {
 		//ticTacTrainer.train(trainSet);
 		ticTacTrainer.train(mustSet);
 		ticTacTrainer.train(makeNullSet());
+		console.log("Creating");
 	}
 	else {
 		ticTacPlayer = winner;
@@ -324,34 +346,27 @@ const gameGen = function(lives, winner, iterations) {
 //ticTacTrainer.train(winningMoves);
 	//uncomment this to seed with your results
 	
-let gameresult = game([.5,.5,.5,.5,.5,.5,.5,.5,.5], 1, ticTacPlayer, secondPlayer);
+	console.log("Starting");
+	
+let gameresult = game(new GameObject(ticTacPlayer, secondPlayer));
 
-
-	//playerone wins, adds to killcount, one step further to winning game entirely
-if(lives<10&&gameresult!=false&&gameresult[2]!=0){
-	lives++;
-	results.resultArray.push(gameresult[0]);
-
-	if(gameresult[3]){
-		
-		
-	//trains on result
-	let a = [{
-			input: gameresult[0],
+if(gameresult!=false){
+		let a = [{
+			input: gameresult.moves,
 			output: [1]
 		},
 		{
-			input: ACME.flip(gameresult[0]),
+			input: ACME.flip(gameresult.moves),
 			output: [0]
 		},
 		
 			//back propagates a turn
 		{
-			input: gameresult[3],
+			input: gameresult.movesOld,
 			output: [1]
 		},
 		{
-			input: ACME.flip(gameresult[3]),
+			input: ACME.flip(gameresult.movesOld),
 			output: [0]
 		}
 			
@@ -360,8 +375,11 @@ if(lives<10&&gameresult!=false&&gameresult[2]!=0){
 		
 		];
 		
-		ticTacTrainer= new Trainer(gameresult[1]);
-		ticTacTrainer.train(a);
+		ticTacTrainer= new Trainer(gameresult.plays);
+		ticTacTrainer.train(a,{
+			iterations: 200,
+			cost: Trainer.cost.MSE
+			});
 		console.log(a);
 		results.hyperbolicSet = results.hyperbolicSet.concat(a);
 	
@@ -369,20 +387,35 @@ if(lives<10&&gameresult!=false&&gameresult[2]!=0){
 		
 		
 		console.log("Training in the Hyperbolic Time Chamber");
-		}
-	return gameGen(lives,gameresult[1], iterations);
+		
 }
-	else if(lives>=10&&gameresult!=false&&gameresult[2]!=0){
+
+
+	//playerone wins, adds to killcount, one step further to winning game entirely
+if(lives<5&&gameresult!=false&&gameresult.count!=0){
+	lives++;
+	results.resultArray.push(gameresult.moves);
+
+		
+		
+	//trains on result
+
+	return gameGen(lives,gameresult.plays, iterations);
+}
+	else if(lives>=4&&gameresult!=false&&gameresult.count!=0){
 		console.log(lives + 1 + " opponents have been vanquished.");
 		console.log(iterations + 1 + " eons have passed before this result was achieved.");
-		results.ultimateWinner = gameresult[1];
+		results.ultimateWinner = gameresult.plays;
 		return;
 }
 
 	//a new champion arises
 else if(gameresult!=false){
 	iterations++;
-	return gameGen(0, gameresult[1], iterations);
+	
+	
+	
+	return gameGen(0, gameresult.plays, iterations);
 }
 
 
