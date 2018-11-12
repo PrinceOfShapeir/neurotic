@@ -166,7 +166,7 @@ else{
 function makeNullSet() {
 	
 	let nullSet = [];
-for(let i = 0; i<500;i++){
+for(let i = 0; i<1000;i++){
 
 nullSet.push({ input: [Math.random(),Math.random(),Math.random(),Math.random(),Math.random(),Math.random(),Math.random(),Math.random(),Math.random()],
 	output: [0]
@@ -272,7 +272,7 @@ if(wins.win(movesNew)){
 }
 else if(count>=movesNew.length){
 	console.log("ran out of moves");
-	return false;
+	return {moves:movesNew, plays:plays,count:count%2, tie:true, movesOld:movesOld};
 	}
 else if(movesNew.indexOf(.5)===-1){
 	console.log("tie");
@@ -312,6 +312,8 @@ let results = {
 	ultimateWinner: {},
 	hyperbolicSet: []
 	};
+	
+	let ultimateWin = {};
 const gameGen = function(livesInput, winner, iterationsInput) {
 	let lives = livesInput + 0;
 	let iterations = iterationsInput + 0;
@@ -321,7 +323,7 @@ const gameGen = function(livesInput, winner, iterationsInput) {
 	if(!winner){
 		ticTacPlayer = new Perceptron(9,18,1);
 		ticTacTrainer= new Trainer(ticTacPlayer);
-		//ticTacTrainer.train(trainSet);
+	//	ticTacTrainer.train(trainSet);
 		ticTacTrainer.train(mustSet);
 		ticTacTrainer.train(makeNullSet());
 		console.log("Creating");
@@ -330,7 +332,7 @@ const gameGen = function(livesInput, winner, iterationsInput) {
 		ticTacPlayer = winner;
 	}
 	
-	let secondPlayer = new Perceptron(9,18,1);
+	let secondPlayer = new Perceptron(9,36,1);
 	secondTrainer = new Trainer(secondPlayer);
 	//secondTrainer.train(trainSet);
 	secondTrainer.train(mustSet);
@@ -338,7 +340,7 @@ const gameGen = function(livesInput, winner, iterationsInput) {
 	if(results.hyperbolicSet.length&&Array.isArray(results.hyperbolicSet)){
 		console.log(results.hyperbolicSet);
 		secondTrainer.train(results.hyperbolicSet,{
-			iterations: 200,
+			iterations: 300,
 			cost: Trainer.cost.MSE
 			});
 		}
@@ -350,7 +352,7 @@ const gameGen = function(livesInput, winner, iterationsInput) {
 	
 let gameresult = game(new GameObject(ticTacPlayer, secondPlayer));
 
-if(gameresult!=false){
+if(!gameresult.tie){
 		let a = [{
 			input: gameresult.moves,
 			output: [1]
@@ -392,7 +394,7 @@ if(gameresult!=false){
 
 
 	//playerone wins, adds to killcount, one step further to winning game entirely
-if(lives<5&&gameresult!=false&&gameresult.count!=0){
+if(lives<2&&!gameresult.tie&&gameresult.count!=0){
 	lives++;
 	results.resultArray.push(gameresult.moves);
 
@@ -402,15 +404,18 @@ if(lives<5&&gameresult!=false&&gameresult.count!=0){
 
 	return gameGen(lives,gameresult.plays, iterations);
 }
-	else if(lives>=4&&gameresult!=false&&gameresult.count!=0){
+	else if(lives>=2&&!gameresult.tie&&gameresult.count!=0){
 		console.log(lives + 1 + " opponents have been vanquished.");
 		console.log(iterations + 1 + " eons have passed before this result was achieved.");
-		results.ultimateWinner = gameresult.plays;
+		let finisher = gameresult.plays.clone();
+		//finisher = finisher.toJSON();
+		results.ultimateWinner = finisher;
+		ultimateWin = finisher;
 		return;
 }
 
 	//a new champion arises
-else if(gameresult!=false){
+else if(!gameresult.tie){
 	iterations++;
 	
 	
@@ -421,8 +426,40 @@ else if(gameresult!=false){
 
 	//tie scenario, but tie is assumed to be bad for playerOne (for now) returns secondPlayer
 	//if tie is not bad, ticTacPlayer returned
-else if(gameresult===false){
+else if(gameresult.tie){
 	iterations++;
+	let a = [{
+			input: gameresult.moves,
+			output: [0]
+		},
+		{
+			input: ACME.flip(gameresult.moves),
+			output: [1]
+		},
+		
+			//back propagates a turn
+		{
+			input: gameresult.movesOld,
+			output: [0]
+		},
+		{
+			input: ACME.flip(gameresult.movesOld),
+			output: [1]
+		}
+			
+				
+		
+		
+		];
+		
+
+			ticTacTrainer = new Trainer(ticTacPlayer);
+			
+		ticTacTrainer.train(a,{
+			iterations: 200,
+			cost: Trainer.cost.MSE
+			});
+		console.log(a);
 	return gameGen(lives, ticTacPlayer, iterations);
 }
 else {
@@ -435,12 +472,40 @@ else {
 }
 //initialize with 0, false, 0
 //If you have a saved character, insert them instead of false
-gameGen(0, false, 0);
-//make sure this file exists! 
-results = JSON.stringify(results);
-fs.appendFile('winset.json', results,err => {  
-    if (err) throw err;
+
+let savedCharacter = false;
+
+if (fs.existsSync('LastWinner.txt')){
+	
+	console.log("Saved Character Detected. Loading...");
+
+	savedCharacter = fs.readFileSync('LastWinner.txt');
+	
+	savedCharacter = Network.fromJSON(JSON.parse(savedCharacter));
+}
+
+gameGen(0, savedCharacter, 0);
+
+fs.writeFile('LastWinner.txt', JSON.stringify(ultimateWin), err=> {
+	
+	if(err) throw err;
 });
+
+
+const trainNewData = JSON.stringify(results.hyperbolicSet);
+
+if(fs.existsSync('winset.json')){
+
+fs.appendFile('winset.json', trainNewData,err => {  
+    if (err) throw err;
+	});
+
+}
+else {
+	fs.writeFile('winset.json', trainNewData, err => {
+		if(err) throw err;
+	});
+}
 
 }
 gameon();
