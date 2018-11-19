@@ -24,18 +24,21 @@ const flip = function (array, upperBound = 1) {
 	
 	return "Error not an array";
 	}
+
+
+	let ray = array.slice();
 	
 
-	for(i in array){
+	for(i in ray){
 
-		if(valnum(array[i])){
+		if(valnum(ray[i])){
 
-			array[i] = Math.abs(array[i]-upperBound);
+			ray[i] = Math.abs(ray[i]-upperBound);
 
 		}
 	}
 	
-	return array;
+	return ray;
 	
 }
 
